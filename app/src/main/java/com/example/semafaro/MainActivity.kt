@@ -7,10 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,7 +19,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,10 +38,7 @@ class MainActivity : ComponentActivity() {
 }
 
 enum class EstadoSemaforo {
-    VERMELHO,
-    AMARELO,
-    VERDE,
-    AMARELO_PISCANTE
+    VERMELHO, AMARELO, VERDE, AMARELO_PISCANTE
 }
 
 @Composable
@@ -61,8 +55,12 @@ fun SemaforoApp() {
     val duracaoVerde = 5000
     val duracaoAmarelo = 2000
 
-    LaunchedEffect(modoPiscante) {
-        if (!modoPiscante) {
+    val scope = rememberCoroutineScope()
+    var job by remember { mutableStateOf<Job?>(null) }
+
+    // Inicia a animação automaticamente
+    LaunchedEffect(Unit) {
+        job = scope.launch {
             while (true) {
                 estadoAtual = EstadoSemaforo.VERMELHO
                 for (i in 0..100) {
@@ -81,12 +79,6 @@ fun SemaforoApp() {
                     progresso = i / 100f
                     delay(duracaoAmarelo / 100L)
                 }
-            }
-        } else {
-            estadoAtual = EstadoSemaforo.AMARELO_PISCANTE
-            while (true) {
-                luzVisivel = !luzVisivel
-                delay(500)
             }
         }
     }
@@ -149,11 +141,41 @@ fun SemaforoApp() {
             onClick = {
                 modoPiscante = !modoPiscante
                 progresso = 0f
+
+                job?.cancel()
+
+                job = scope.launch {
+                    if (modoPiscante) {
+                        estadoAtual = EstadoSemaforo.AMARELO_PISCANTE
+                        while (true) {
+                            luzVisivel = !luzVisivel
+                            delay(500)
+                        }
+                    } else {
+                        while (true) {
+                            estadoAtual = EstadoSemaforo.VERMELHO
+                            for (i in 0..100) {
+                                progresso = i / 100f
+                                delay(duracaoVermelho / 100L)
+                            }
+
+                            estadoAtual = EstadoSemaforo.VERDE
+                            for (i in 0..100) {
+                                progresso = i / 100f
+                                delay(duracaoVerde / 100L)
+                            }
+
+                            estadoAtual = EstadoSemaforo.AMARELO
+                            for (i in 0..100) {
+                                progresso = i / 100f
+                                delay(duracaoAmarelo / 100L)
+                            }
+                        }
+                    }
+                }
             }
         ) {
-            Text(
-                text = if (modoPiscante) "Voltar ao Modo Normal" else "Ativar Amarelo Piscante"
-            )
+            Text(text = if (modoPiscante) "Voltar ao Modo Normal" else "Ativar Amarelo Piscante")
         }
     }
 }
@@ -170,10 +192,9 @@ fun LuzSemaforo(
 ) {
     val fundo = Color.Black
 
-    // Define a opacidade da luz
     val intensidade = when {
         ativa && estadoAtual == EstadoSemaforo.AMARELO_PISCANTE -> 1f
-        ativa -> 0.4f // luzes mais suaves no modo normal
+        ativa -> 0.4f
         else -> 0f
     }
 
@@ -182,7 +203,6 @@ fun LuzSemaforo(
             .size(80.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Fundo preto fixo
         Box(
             modifier = Modifier
                 .size(80.dp)
