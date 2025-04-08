@@ -35,3 +35,9 @@ No exemplo, usamos loops `while(true)` dentro de corrotinas. Em programação tr
 - **Código sequencial**: Podemos escrever o código da lógica do semáforo de forma linear e fácil de entender.
 - **Cancelamento automático**: As corrotinas são automaticamente canceladas quando não são mais necessárias.
 - **Sincronização com o estado da UI**: As corrotinas são relançadas quando `modoPiscante` muda.
+
+## Demonstração do Semáforo 🚦
+
+<div align="center">
+<img src="./git_sem.gif" alt="Semáforo animado" width="300"/>
+</div>
